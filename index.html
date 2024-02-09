@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Data</title>
+</head>
+<body>
+    <style>
+        .main {
+            margin-bottom: 20px;
+            border: 2px solid red;
+            padding: 10px;
+            background-color: skyblue;
+        }
+        .dis {
+            display: none;
+        }
+        .show {
+            display: block;
+        }
+        #remove {
+            position: absolute;
+            left: 160px;
+            top: 8px;
+        }
+        #inp {
+            height: 25px;
+            border-radius: 5px;
+            background-color: rgb(207, 206, 206);
+            color: black;
+            font-size: 20px;
+            border: none; 
+            padding-left: 8px;
+        }
+        #search, #sort, #next, #previous {
+            border-radius: 4px;
+            height: 25px;
+            color: white;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        #search {
+            background-color: rgb(201, 79, 201);
+        }
+        #sort {
+            background-color: rgb(98, 179, 98);
+        }
+        #next {
+            background-color: rgb(180, 56, 56);
+        }
+        #previous {
+            background-color: rgb(44, 44, 179);
+            color: #666; /* Change color when disabled */
+            cursor: not-allowed; /* Change cursor when disabled */
+        }
+        #page {
+            height: 25px;
+            border-radius: 5px;
+            background-color: rgb(207, 206, 206);
+            color: black;
+            font-size: 20px;
+            border: none; 
+            padding-left: 8px;
+        }
+        #pop {
+            background-color: rgb(248, 112, 0);
+            font-size: 20px;
+            font-weight: 600;
+            height: 30px;
+            text-align: center;
+            display: none; /* Initially hidden */
+        }
+    </style>
+    <div class="main">
+        <input id="inp" type="text" placeholder="search" oninput="cross()">
+        <button id="remove" class="dis" onclick="remove()">X</button>
+        <button id="search" onclick="search()">Search</button>
+        <button id="sort" onclick="sort()">Sort</button>
+        <button id="next" onclick="next()">Next</button>
+        <button id="previous" onclick="previous()">Previous</button>
+        <input type="number" id="page" oninput="page()" placeholder="Enter Page Number" max="51">
+    </div>
+    <div id="pop"></div>
+    <table border="1">
+        <thead style="background-color: red; font-size: 15px; color: white;">
+            <tr>
+                <th>PostId</th>
+                <th>Id</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Body</th>
+            </tr>
+        </thead>
+        <tbody id="abc" style="background-color: yellow;">
+        </tbody>
+    </table>
+    <script>
+        let result;
+        let nextbtn = document.getElementById('next');
+        let prevbtn = document.getElementById('previous');
+        let tbody = document.getElementById('abc');
+        let pop = document.getElementById('pop');
+        let pageInput = document.getElementById('page');
+        let arr;
+        let i = 0, j = 10;
+
+        fetch('https://jsonplaceholder.typicode.com/comments')
+            .then((resp) => {
+                return resp.json();
+            })
+            .then((resp) => {
+                console.log(resp);
+                arr = resp;
+                createTab(resp);
+            });
+
+        function createTab(data) {
+            tbody.innerHTML = '';
+            for (i; i < j; i++) {
+                let tr = document.createElement('tr');
+                for (let x in data[i]) {
+                    let td = document.createElement('td');
+                    td.innerHTML = data[i][x];
+                    tr.append(td);
+                }
+                tbody.append(tr);
+            }
+            if (i <= 10) {
+                prevbtn.disabled = true;
+                prevbtn.style.color = '#666';
+            } else {
+                prevbtn.disabled = false;
+                prevbtn.style.color = 'white';
+            }
+            if (j >= data.length) {
+                nextbtn.disabled = true;
+                nextbtn.style.color = '#666';
+            } else {
+                nextbtn.disabled = false;
+                nextbtn.style.color = 'white';
+            }
+        }
+
+        function next() {
+            prevbtn.disabled = false;
+            prevbtn.style.color = 'white';
+            nextbtn.disabled = true;
+            pageInput.disabled = true;
+            tbody.innerHTML = '';
+            j = j + 10;
+            if (result) {
+                createTab(result);
+            } else {
+                createTab(arr);
+            }
+        }
+
+        function previous() {
+            tbody.innerHTML = '';
+            i = i - 20;
+            j = j - 10;
+            createTab(arr);
+        }
+
+        function remove() {
+            let buton = document.getElementById('remove');
+            let input = document.getElementById('inp');
+            buton.setAttribute('class', 'dis');
+            input.value = "";
+            tbody.innerHTML = '';
+            i = 0;
+            j = 10;
+            createTab(arr);
+        }
+
+        function cross() {
+            let input = document.getElementById('inp');
+            let buton = document.getElementById('remove');
+            if (input.value.length == 0) {
+                buton.setAttribute('class', 'dis');
+            } else {
+                buton.setAttribute('class', 'dis show');
+            }
+        }
+
+        function search() {
+            tbody.innerHTML = '';
+            let input = document.getElementById('inp').value;
+            result = arr.filter((item) => {
+                if (item.name.includes(input)) {
+
+
+
+                    return item;
+                }
+            });
+
+            i = 0;
+            j = 10;
+            createTab(result);
+        }
+
+        function page() {
+            tbody.innerHTML = '';
+            pop.innerHTML = ''; // Clear the pop message
+            let page = document.getElementById('page').value;
+            if (page === '') {
+                i = 0;
+                j = 10;
+                createTab(arr);
+            } else if (page > Math.ceil(arr.length / 10)) {
+                pop.innerHTML = 'No more data is found';
+                pop.style.display = 'block'
+            } else {
+                i = (page - 1) * 10;
+                j = page * 10;
+                createTab(arr);
+            }
+        }
+
+        function sort() {
+            let sort = [];
+            arr.forEach((value) => {
+                sort.push(value.name);
+            });
+            sort = sort.sort();
+            result = [];
+            sort.forEach((sorted) => {
+                arr.forEach((value) => {
+                    if (sorted === value.name) {
+                        result.push(value);
+                    }
+                });
+            });
+            i = 0;
+            j = 10;
+            createTab(result);
+        }
+    </script>
+</body>
+</html>
